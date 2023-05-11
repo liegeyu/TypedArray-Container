@@ -1,0 +1,23 @@
+{
+  "name": "typedarray-container",
+  "version": "1.0.0",
+  "description": "ts图形渲染用到的TypedArray容器。包含链表、栈、队列、树等",
+  "main": "typedArrayList.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/liegeyu/TypedArray-Container.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/liegeyu/TypedArray-Container/issues"
+  },
+  "homepage": "https://github.com/liegeyu/TypedArray-Container#readme",
+  "dependencies": {
+    "@types/node": "^20.1.2"
+  }
+}

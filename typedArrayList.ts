@@ -1,4 +1,12 @@
-// TypedArrayList
+/**
+ * @类 TypedArrayList
+ * 类型数组链表
+ * @clear
+ * @get
+ * @push
+ * @slice
+ * @subArray
+ */
 export class TypedArrayList<T extends Uint16Array | Uint8Array | Float32Array> {
   private _array: T;
   private _typedArrayConstructor: new (length: number) => T;
@@ -81,6 +89,16 @@ export class TypedArrayList<T extends Uint16Array | Uint8Array | Float32Array> {
     return this._array.slice(start, end) as T;
   }
 }
+
+/**
+ * @类 Dictionary
+ * 字典对象
+ */
+export class Dictionary<T> {}
+
+/**
+ * 用例 ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓
+ */
 
 // init TypedArrayList
 let fload32ArrayList: TypedArrayList<Float32Array> = new TypedArrayList(

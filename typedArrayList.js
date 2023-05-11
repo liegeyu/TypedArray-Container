@@ -5,6 +5,8 @@ exports.TypedArrayList = void 0;
 var TypedArrayList = /** @class */ (function () {
     function TypedArrayList(typedArrayConstructor, capacity) {
         if (capacity === void 0) { capacity = 8; }
+        // 扩容 callback
+        this.capacityChangedCallback = null;
         this._typedArrayConstructor = typedArrayConstructor;
         this._capacity = capacity;
         if (this._capacity === 0) {
@@ -34,6 +36,17 @@ var TypedArrayList = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
+    // clear 方法
+    TypedArrayList.prototype.clear = function () {
+        this._length = 0;
+    };
+    // get 方法
+    TypedArrayList.prototype.get = function (index) {
+        if (index < 0 || index >= this._length) {
+            throw new Error("index overshoot!");
+        }
+        return this._array[index];
+    };
     // push 方法
     TypedArrayList.prototype.push = function (num) {
         // length > capacity 扩容
@@ -44,6 +57,9 @@ var TypedArrayList = /** @class */ (function () {
             var oldArray = this._array;
             this._array = new this._typedArrayConstructor(this._capacity);
             this._array.set(oldArray);
+            if (this.capacityChangedCallback !== null) {
+                this.capacityChangedCallback(this);
+            }
         }
         this._array[this._length++] = num;
         return this._length;
@@ -81,3 +97,6 @@ function testSubarray(subarray) {
 }
 testSubarray(true);
 testSubarray(false);
+// map
+var map = new Map();
+console.log(map);
