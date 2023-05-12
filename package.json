@@ -19,5 +19,6 @@
   "homepage": "https://github.com/liegeyu/TypedArray-Container#readme",
   "dependencies": {
     "@types/node": "^20.1.2"
-  }
+  },
+  "type": "module"
 }
