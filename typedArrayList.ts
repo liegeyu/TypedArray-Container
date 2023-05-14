@@ -1,5 +1,5 @@
 /**
- * @类 TypedArrayList
+ * @class TypedArrayList
  * 类型数组链表
  * @get length: number  获取 typedArray 的长度
  * @get capacity: number  获取开辟的 typedArray 的长度
@@ -94,7 +94,7 @@ export class TypedArrayList<T extends Uint16Array | Uint8Array | Float32Array> {
 }
 
 /**
- * @类 Dictionary
+ * @class Dictionary
  * 字典对象, Dictionary(useMap: boolean = true) useMap 为 true 则使用 Map<>() 结构, 否则使用 { [key: string]: T } 索引签名
  * @get length: number  获取 Dictionary 长度
  * @get keys: string[]  获取所有键 key
@@ -212,7 +212,7 @@ export class Dictionary<T> {
 }
 
 /**
- * @类 ListNode
+ * @class ListNode
  * 双向循环链表节点
  */
 export class ListNode<T> {
@@ -228,7 +228,7 @@ export class ListNode<T> {
 }
 
 /**
- * 类 List
+ * @class List
  * 双向循环链表
  * @get length: number  获取 List 的长度
  */
@@ -369,6 +369,388 @@ export class List<T> {
         cb(node.data);
       }
     }
+  }
+}
+
+/**
+ * @interface IAdapter
+ * 接口, 统一栈和队列的方法和属性
+ * @variation length: number;
+ * @variation isEmpty: boolean;
+ * @variation add(data: T): void;
+ * @variation remove(): T | undefined;
+ * @variation clear(): void;
+ */
+export interface IAdapter<T> {
+  length: number;
+  isEmpty: boolean;
+  add(data: T): void;
+  remove(): T | undefined;
+  clear(): void;
+}
+
+/**
+ * @class AdapterBase
+ * 抽象基类。栈与队列有两种类型可选 List<T> 类型或者 Array<T> 类型; 实现队列和栈的共有操作; 将不同操作 remove 交给具体栈和队列自己实现;
+ */
+export abstract class AdapterBase<T> implements IAdapter<T> {
+  protected _arr: Array<T> | List<T>;
+
+  public constructor(useList: boolean = true) {
+    if (useList) {
+      this._arr = new List<T>();
+    } else {
+      this._arr = new Array<T>();
+    }
+  }
+
+  // length
+  public get length(): number {
+    return this._arr.length;
+  }
+
+  // isEmpty
+  public get isEmpty(): boolean {
+    return this._arr.length === 0;
+  }
+
+  // add 方法
+  public add(data: T): void {
+    this._arr.push(data);
+  }
+
+  // clear 方法
+  public clear(): void {
+    if (this._arr instanceof List) {
+      this._arr = new List<T>();
+    } else {
+      this._arr = new Array<T>();
+    }
+  }
+
+  // remove 方法, 栈与队列 remove 方法不同
+  public abstract remove(): T | undefined;
+}
+
+/**
+ * @class Stack extends AdapterBase
+ * 栈
+ * @function remove
+ */
+export class Stack<T> extends AdapterBase<T> {
+  public remove(): T | undefined {
+    if (this._arr.length > 0) {
+      this._arr.pop();
+    }
+
+    return undefined;
+  }
+}
+
+/**
+ * @class Queue extends AdapterBase
+ * 队列
+ * @function remove
+ */
+export class Queue<T> extends AdapterBase<T> {
+  public remove(): T | undefined {
+    if (this._arr.length > 0) {
+      return this._arr.shift();
+    }
+
+    return undefined;
+  }
+}
+
+/**
+ * @class TreeNode
+ * 树节点
+ * @get parent 获取父节点
+ * @get childCount 获取子节点数量
+ * @get root 获取根节点
+ * @get depth 获取树的度
+ * @function getChildAt(index: number): TreeNode<T> | undefined 通过索引获取子节点
+ * @function hasChild(): boolean 判断当前节点是否含有子节点
+ * @function isDescendantOf(ancestor: TreeNode<T> | undefined): boolean 判断要添加的子节点是否为当前节点的祖先节点
+ * @function removeChildAt(index: number): TreeNode<T> | undefined 根据索引删除某个节点
+ * @function removeChild(child: TreeNode<T> | undefined): TreeNode<T> | undefined 根据节点删除某个节点
+ * @function remove(): TreeNode<T> | undefined 将当前节点从父节点中删除
+ * @function addChildAt(child: TreeNode<T>,index: number): TreeNode<T> | undefined 添加子节点
+ * @function addChild(child: TreeNode<T>): TreeNode<T> | undefined 添加子节点
+ */
+export class TreeNode<T> {
+  private _parent: TreeNode<T> | undefined;
+  private _children: Array<TreeNode<T>> | undefined;
+
+  public name: string;
+  public data: T | undefined;
+
+  public constructor(
+    data: T | undefined = undefined,
+    parent: TreeNode<T> | undefined = undefined,
+    name: string = ""
+  ) {
+    this._parent = parent;
+    this._children = undefined;
+    this.name = name;
+    this.data = data;
+
+    if (this._parent !== undefined) {
+      this._parent.addChild(this);
+    }
+  }
+
+  // parent
+  public get parent(): TreeNode<T> | undefined {
+    return this._parent;
+  }
+
+  // childCount
+  public get childCount(): number {
+    if (this._children !== undefined) {
+      return this._children.length;
+    } else {
+      return 0;
+    }
+  }
+
+  // root
+  public get root(): TreeNode<T> | undefined {
+    let curR: TreeNode<T> | undefined = this;
+    while (curR !== undefined && curR.parent !== undefined) {
+      curR = curR.parent;
+    }
+
+    return curR;
+  }
+
+  // depth
+  public get depth(): number {
+    let curR: TreeNode<T> | undefined = this;
+    let deep: number = 0;
+    while (curR !== undefined && curR.parent !== undefined) {
+      curR = curR.parent;
+      deep++;
+    }
+
+    return deep;
+  }
+
+  // getChildAt 通过索引获取子节点
+  public getChildAt(index: number): TreeNode<T> | undefined {
+    if (this._children === undefined) {
+      return undefined;
+    }
+    if (index < 0 || index >= this._children.length) {
+      return undefined;
+    }
+
+    return this._children[index];
+  }
+
+  // hasChild 判断当前节点是否含有子节点
+  public hasChild(): boolean {
+    return this._children !== undefined && this._children.length > 0;
+  }
+
+  // isDescendantOf 判断要添加的子节点是否为当前节点的祖先节点
+  public isDescendantOf(ancestor: TreeNode<T> | undefined): boolean {
+    if (ancestor === undefined) {
+      return false;
+    }
+
+    for (
+      let node: TreeNode<T> | undefined = this._parent;
+      node !== undefined;
+      node = node._parent
+    ) {
+      if (node === ancestor) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  // removeChildAt 根据索引删除某个节点
+  public removeChildAt(index: number): TreeNode<T> | undefined {
+    if (this._children === undefined) {
+      return undefined;
+    }
+
+    let child: TreeNode<T> | undefined = this.getChildAt(index);
+    if (child === undefined) {
+      return undefined;
+    }
+
+    // 将目标节点从树中删除, 并将目标节点父节点设为 undefined
+    this._children.splice(index, 1);
+    child._parent = undefined;
+
+    return child;
+  }
+
+  // removeChild 根据节点删除某个节点
+  public removeChild(child: TreeNode<T> | undefined): TreeNode<T> | undefined {
+    if (child === undefined) {
+      return undefined;
+    }
+    if (this._children === undefined) {
+      return undefined;
+    }
+
+    let findChild: TreeNode<T> | undefined = undefined;
+    for (let i = 0; i < this._children.length; i++) {
+      if (this._children[i] === child) {
+        this._children.splice(i, 1);
+        this._parent = undefined;
+        findChild = this._children[i];
+        break;
+      }
+    }
+
+    return findChild;
+  }
+
+  // remove 将当前节点从父节点中删除
+  public remove(): TreeNode<T> | undefined {
+    if (this._parent !== undefined) {
+      return this._parent.removeChild(this);
+    }
+
+    return undefined;
+  }
+
+  // addChildAt 添加子节点
+  public addChildAt(
+    child: TreeNode<T>,
+    index: number
+  ): TreeNode<T> | undefined {
+    // 判断 child 是否为当前节点祖先节点
+    if (this.isDescendantOf(child)) {
+      return undefined;
+    }
+
+    if (this._children === undefined) {
+      this._children = new Array<TreeNode<T>>();
+    }
+
+    if (index >= 0 && index <= this._children.length) {
+      // child 存在父节点
+      if (child._parent !== undefined) {
+        child._parent.removeChild(child);
+      }
+      // 直接添加
+      child._parent = this;
+      this._children.splice(index, 0, child);
+      return child;
+    }
+
+    return undefined;
+  }
+
+  // addChild 添加子节点
+  public addChild(child: TreeNode<T>): TreeNode<T> | undefined {
+    if (this._children === undefined) {
+      this._children = new Array<TreeNode<T>>();
+    }
+
+    return this.addChildAt(child, this._children.length);
+  }
+}
+
+/**
+ * @interface IEnumberator
+ * 树结构枚举器
+ */
+export interface IEnumberator<T> {
+  // 迭代器重置到初始位置
+  reset(): void;
+  // 越界, moveNext 返回 false, 否则将 current 设置为下一位元素返回 true
+  moveNext(): boolean;
+  // 获取当前元素
+  readonly current: T | undefined;
+}
+
+export type Indexer = (len: number, index: number) => number;
+
+export function IndexerL2R(len: number, index: number): number {
+  return index;
+}
+
+export function IndexerR2L(len: number, index: number): number {
+  return len - index - 1;
+}
+
+export class NodeT2BEnumerator<
+  T,
+  IndexFun extends Indexer,
+  Adapter extends IAdapter<TreeNode<T>>
+> implements IEnumberator<TreeNode<T>>
+{
+  // 根节点
+  private _node: TreeNode<T> | undefined;
+  // 队列或栈的适配器，用来遍历元素，指向泛型参数
+  private _adapter: IAdapter<TreeNode<T>>;
+  // 当前节点
+  private _curNode: TreeNode<T> | undefined;
+  // 当前indexer, 用于确认遍历方向
+  private _indexer: IndexFun;
+
+  public constructor(
+    node: TreeNode<T> | undefined,
+    func: IndexFun,
+    adapter: new () => Adapter
+  ) {
+    // 根节点必须存在
+    if (node === undefined) {
+      return;
+    }
+
+    this._node = node;
+    this._indexer = func;
+    this._adapter = new adapter();
+    this._curNode = undefined;
+
+    this._adapter.add(this._node);
+  }
+
+  public get current(): TreeNode<T> | undefined {
+    return this._curNode;
+  }
+
+  public reset(): void {
+    if (this._node === undefined) {
+      return;
+    }
+
+    this._curNode = undefined;
+    this._adapter.clear();
+    this._adapter.add(this._node);
+  }
+
+  public moveNext(): boolean {
+    // 当队列或者栈为空时，返回 false
+    if (this._adapter.isEmpty) {
+      return false;
+    }
+    // 弹出头或者尾部元素
+    this._curNode = this._adapter.remove();
+    if (this._curNode !== undefined) {
+      // 获取当前节点子节点个数
+      let len: number = this._curNode.childCount;
+      for (let i = 0; i < len; i++) {
+        let childIndex: number = this._indexer(len, i);
+        let child: TreeNode<T> | undefined =
+          this._curNode.getChildAt(childIndex);
+
+        if (child !== undefined) {
+          this._adapter.add(child);
+        }
+      }
+    }
+
+    return true;
   }
 }
 
