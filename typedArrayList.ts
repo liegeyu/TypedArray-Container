@@ -230,6 +230,7 @@ export class ListNode<T> {
 /**
  * 类 List
  * 双向循环链表
+ * @get length: number  获取 List 的长度
  */
 export class List<T> {
   private _headNode: ListNode<T>;
@@ -294,6 +295,54 @@ export class List<T> {
     this._length++;
 
     return this._length;
+  }
+
+  // 删除
+  public remove(node: ListNode<T>): ListNode<T> {
+    let ret: ListNode<T> | null = node;
+    let next: ListNode<T> | null = node.next;
+    let prev: ListNode<T> | null = node.prev;
+
+    if (prev !== null) {
+      prev.next = next;
+    }
+    if (next !== null) {
+      next.prev = prev;
+    }
+    this._length--;
+
+    return ret;
+  }
+
+  // push 方法
+  public push(data: T): void {
+    this.insert(this.end(), data);
+  }
+
+  // pop 方法
+  public pop(): T | undefined {
+    let prev: ListNode<T> | null = this.end().prev;
+
+    if (prev !== null) {
+      let ret: T | null = prev.data;
+      this.remove(prev);
+      return ret;
+    }
+
+    return undefined;
+  }
+
+  // unshift 方法
+  public unshift(data: T): void {
+    this.insert(this.begin(), data);
+  }
+
+  // shift 方法
+  public shift(): T | undefined {
+    let ret: T | undefined = this.begin().data;
+    this.remove(this.begin());
+
+    return ret;
   }
 
   // next 遍历并执行回调
