@@ -440,7 +440,7 @@ export abstract class AdapterBase<T> implements IAdapter<T> {
 export class Stack<T> extends AdapterBase<T> {
   public remove(): T | undefined {
     if (this._arr.length > 0) {
-      this._arr.pop();
+      return this._arr.pop();
     }
 
     return undefined;
@@ -657,6 +657,15 @@ export class TreeNode<T> {
 
     return this.addChildAt(child, this._children.length);
   }
+
+  // 层次化输出
+  public repeatString(target: string, num: number): string {
+    let strRes: string = "";
+    for (let i = 0; i < num; i++) {
+      strRes += target;
+    }
+    return strRes;
+  }
 }
 
 /**
@@ -682,6 +691,10 @@ export function IndexerR2L(len: number, index: number): number {
   return len - index - 1;
 }
 
+/**
+ * @class NodeT2BEnumerator
+ * 先序遍历枚举器
+ */
 export class NodeT2BEnumerator<
   T,
   IndexFun extends Indexer,
@@ -739,6 +752,7 @@ export class NodeT2BEnumerator<
     if (this._curNode !== undefined) {
       // 获取当前节点子节点个数
       let len: number = this._curNode.childCount;
+
       for (let i = 0; i < len; i++) {
         let childIndex: number = this._indexer(len, i);
         let child: TreeNode<T> | undefined =
@@ -751,6 +765,147 @@ export class NodeT2BEnumerator<
     }
 
     return true;
+  }
+}
+
+/**
+ * @clss NodeB2TEnumerator
+ * 后序遍历枚举器
+ */
+export class NodeB2TEnumerator<T> implements IEnumberator<TreeNode<T>> {
+  // 枚举器接口
+  private _iter: IEnumberator<TreeNode<T>>;
+  private _arr: Array<TreeNode<T>> | undefined;
+  // 当前数组索引
+  private _arrIndex: number;
+
+  public constructor(iter: IEnumberator<TreeNode<T>>) {
+    this._iter = iter; // 指向先序遍历迭代器
+    this.reset();
+  }
+
+  public get current(): TreeNode<T> | undefined {
+    if (this._arrIndex >= this._arr.length) {
+      return undefined;
+    }
+
+    return this._arr[this._arrIndex];
+  }
+
+  public reset(): void {
+    this._arr = [];
+    while (this._iter.moveNext()) {
+      this._arr.push(this._iter.current);
+    }
+
+    this._arrIndex = this._arr.length;
+  }
+
+  public moveNext(): boolean {
+    this._arrIndex--;
+    return this._arrIndex >= 0 && this._arrIndex < this._arr.length;
+  }
+}
+
+/**
+ * @class NodeEnumeratorFactory
+ * 使用树的遍历枚举器
+ * @function createDfL2RT2BIter 先序遍历 深搜 stack, 从左往右 IndexerR2L, 从上到下
+ * @function createDfR2LT2BIter 先序遍历 深搜 stack, 从右往左 IndexerL2R, 从上到下
+ * @function createBfL2RT2BIter 先序遍历 宽搜 Queue, 从左往右 IndexerL2R, 从上到下
+ * @function createBfR2LT2BIter 先序遍历 宽搜 Queue, 从右往左 IndexerR2L, 从上到下
+ * @function createDfL2RB2TIter 后序遍历 深搜 stack, 从左到右 从下到上
+ * @function createDfR2LB2TIter 后序遍历 深搜 stack, 从右到左 从下到上
+ * @function createBfL2RB2TIter 后序遍历 宽搜 queue, 从左到右 从下到上
+ * @function createBfR2LB2TIter 后序遍历 宽搜 queue, 从右到左 从下到上
+ */
+export class NodeEnumeratorFactory {
+  // 先序遍历 深搜 stack, 从左往右 IndexerR2L, 从上到下
+  public static createDfL2RT2BIter<T>(
+    node: TreeNode<T> | undefined
+  ): IEnumberator<TreeNode<T>> {
+    let iter: IEnumberator<TreeNode<T>> = new NodeT2BEnumerator(
+      node,
+      IndexerR2L,
+      Stack
+    );
+    return iter;
+  }
+
+  // 先序遍历 深搜 stack, 从右往左 IndexerL2R, 从上到下
+  public static createDfR2LT2BIter<T>(
+    node: TreeNode<T> | undefined
+  ): IEnumberator<TreeNode<T>> {
+    let iter: IEnumberator<TreeNode<T>> = new NodeT2BEnumerator(
+      node,
+      IndexerL2R,
+      Stack
+    );
+    return iter;
+  }
+
+  // 先序遍历 宽搜 Queue, 从左往右 IndexerL2R, 从上到下
+  public static createBfL2RT2BIter<T>(
+    node: TreeNode<T> | undefined
+  ): IEnumberator<TreeNode<T>> {
+    let iter: IEnumberator<TreeNode<T>> = new NodeT2BEnumerator(
+      node,
+      IndexerL2R,
+      Queue
+    );
+    return iter;
+  }
+
+  // 先序遍历 宽搜 Queue, 从右往左 IndexerR2L, 从上到下
+  public static createBfR2LT2BIter<T>(
+    node: TreeNode<T> | undefined
+  ): IEnumberator<TreeNode<T>> {
+    let iter: IEnumberator<TreeNode<T>> = new NodeT2BEnumerator(
+      node,
+      IndexerR2L,
+      Queue
+    );
+    return iter;
+  }
+
+  // 后序遍历 深搜 stack, 从左到右 从下到上
+  public static createDfL2RB2TIter<T>(
+    node: TreeNode<T> | undefined
+  ): IEnumberator<TreeNode<T>> {
+    let iter: IEnumberator<TreeNode<T>> = new NodeB2TEnumerator<T>(
+      NodeEnumeratorFactory.createDfR2LT2BIter(node)
+    );
+    return iter;
+  }
+
+  // 后序遍历 深搜 stack, 从右到左 从下到上
+  public static createDfR2LB2TIter<T>(
+    node: TreeNode<T> | undefined
+  ): IEnumberator<TreeNode<T>> {
+    let iter: IEnumberator<TreeNode<T>> = new NodeB2TEnumerator<T>(
+      NodeEnumeratorFactory.createDfL2RT2BIter(node)
+    );
+    return iter;
+  }
+
+  // 后序遍历 宽搜 queue, 从左到右 从下到上
+  public static createBfL2RB2TIter<T>(
+    node: TreeNode<T> | undefined
+  ): IEnumberator<TreeNode<T>> {
+    let iter: IEnumberator<TreeNode<T>> = new NodeB2TEnumerator<T>(
+      NodeEnumeratorFactory.createBfR2LT2BIter(node)
+    );
+    return iter;
+  }
+
+  // 后序遍历 宽搜 queue, 从右到左 从下到上
+  public static createBfR2LB2TIter<T>(
+    node: TreeNode<T> | undefined
+  ): IEnumberator<TreeNode<T>> {
+    let iter: IEnumberator<TreeNode<T>> = new NodeB2TEnumerator<T>(
+      NodeEnumeratorFactory.createBfL2RT2BIter(node)
+    );
+    return iter;
   }
 }
 
@@ -806,3 +961,101 @@ console.log("keys", dict.keys);
 
 // values
 console.log("values", dict.values);
+
+// 测试树结构迭代器
+// let root: TreeNode<number> = new TreeNode<number>(0, undefined, "root");
+// let node1: TreeNode<number> = new TreeNode<number>(1, root, "node1");
+// let node2: TreeNode<number> = new TreeNode<number>(2, root, "node2");
+
+// 测试 class
+class NumberNode extends TreeNode<number> {}
+export class TreeNodeTest {
+  public static createTree(): NumberNode {
+    let root: NumberNode = new NumberNode(0, undefined, "root");
+    let node1: NumberNode = new NumberNode(1, root, "node1");
+    let node2: NumberNode = new NumberNode(2, root, "node2");
+    let node3: NumberNode = new NumberNode(3, root, "node3");
+    let node4: NumberNode = new NumberNode(4, node1, "node4");
+    let node5: NumberNode = new NumberNode(5, node1, "node5");
+    let node6: NumberNode = new NumberNode(6, node2, "node6");
+    let node7: NumberNode = new NumberNode(7, node2, "node7");
+    let node8: NumberNode = new NumberNode(8, node3, "node8");
+    let node9: NumberNode = new NumberNode(9, node4, "node9");
+    let node10: NumberNode = new NumberNode(10, node6, "node10");
+    let node11: NumberNode = new NumberNode(11, node7, "node11");
+    let node12: NumberNode = new NumberNode(12, node11, "node12");
+
+    return root;
+  }
+
+  public static outputNodesInfo(iter: IEnumberator<TreeNode<number>>): string {
+    let output: string[] = [];
+    let current: TreeNode<number> | undefined = undefined;
+    while (iter.moveNext()) {
+      current = iter.current;
+
+      if (current !== undefined) {
+        output.push(current.name);
+      }
+    }
+    return "实际输出: [" + output.join(",") + "]";
+  }
+}
+
+let root: NumberNode = TreeNodeTest.createTree();
+let iter: IEnumberator<TreeNode<number>>;
+let current: TreeNode<number> | undefined = undefined;
+
+iter = NodeEnumeratorFactory.createDfL2RT2BIter<number>(root);
+// while (iter.moveNext()) {
+//   current = iter.current;
+//   if (current !== undefined) {
+//     console.log(current.repeatString(" ", current.depth * 4) + current.name);
+//   }
+// }
+console.log(
+  "1: 先序遍历 深搜 stack, 从左往右 从上到下",
+  TreeNodeTest.outputNodesInfo(iter)
+);
+
+iter = NodeEnumeratorFactory.createDfR2LT2BIter<number>(root);
+console.log(
+  "2: 先序遍历 深搜 stack, 从右往左 从上到下",
+  TreeNodeTest.outputNodesInfo(iter)
+);
+
+iter = NodeEnumeratorFactory.createDfL2RB2TIter<number>(root);
+console.log(
+  "3: 后序遍历 深搜 stack, 从左到右 从下到上",
+  TreeNodeTest.outputNodesInfo(iter)
+);
+
+iter = NodeEnumeratorFactory.createDfR2LB2TIter<number>(root);
+console.log(
+  "4: 后序遍历 深搜 stack, 从右到左 从下到上",
+  TreeNodeTest.outputNodesInfo(iter)
+);
+
+iter = NodeEnumeratorFactory.createBfL2RT2BIter<number>(root);
+console.log(
+  "5: 先序遍历 宽搜 Queue, 从左往右 从上到下",
+  TreeNodeTest.outputNodesInfo(iter)
+);
+
+iter = NodeEnumeratorFactory.createBfR2LT2BIter<number>(root);
+console.log(
+  "6: 先序遍历 宽搜 Queue, 从右往左 从上到下",
+  TreeNodeTest.outputNodesInfo(iter)
+);
+
+iter = NodeEnumeratorFactory.createBfL2RB2TIter<number>(root);
+console.log(
+  "7: 后序遍历 宽搜 queue, 从左到右 从下到上",
+  TreeNodeTest.outputNodesInfo(iter)
+);
+
+iter = NodeEnumeratorFactory.createBfR2LB2TIter<number>(root);
+console.log(
+  "8: 后序遍历 宽搜 queue, 从右到左 从下到上",
+  TreeNodeTest.outputNodesInfo(iter)
+);

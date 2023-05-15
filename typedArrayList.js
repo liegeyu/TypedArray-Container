@@ -336,7 +336,7 @@ export class AdapterBase {
 export class Stack extends AdapterBase {
     remove() {
         if (this._arr.length > 0) {
-            this._arr.pop();
+            return this._arr.pop();
         }
         return undefined;
     }
@@ -505,6 +505,149 @@ export class TreeNode {
         }
         return this.addChildAt(child, this._children.length);
     }
+    // 层次化输出
+    repeatString(target, num) {
+        let strRes = "";
+        for (let i = 0; i < num; i++) {
+            strRes += target;
+        }
+        return strRes;
+    }
+}
+export function IndexerL2R(len, index) {
+    return index;
+}
+export function IndexerR2L(len, index) {
+    return len - index - 1;
+}
+/**
+ * @class NodeT2BEnumerator
+ * 先序遍历枚举器
+ */
+export class NodeT2BEnumerator {
+    constructor(node, func, adapter) {
+        // 根节点必须存在
+        if (node === undefined) {
+            return;
+        }
+        this._node = node;
+        this._indexer = func;
+        this._adapter = new adapter();
+        this._curNode = undefined;
+        this._adapter.add(this._node);
+    }
+    get current() {
+        return this._curNode;
+    }
+    reset() {
+        if (this._node === undefined) {
+            return;
+        }
+        this._curNode = undefined;
+        this._adapter.clear();
+        this._adapter.add(this._node);
+    }
+    moveNext() {
+        // 当队列或者栈为空时，返回 false
+        if (this._adapter.isEmpty) {
+            return false;
+        }
+        // 弹出头或者尾部元素
+        this._curNode = this._adapter.remove();
+        if (this._curNode !== undefined) {
+            // 获取当前节点子节点个数
+            let len = this._curNode.childCount;
+            for (let i = 0; i < len; i++) {
+                let childIndex = this._indexer(len, i);
+                let child = this._curNode.getChildAt(childIndex);
+                if (child !== undefined) {
+                    this._adapter.add(child);
+                }
+            }
+        }
+        return true;
+    }
+}
+/**
+ * @clss NodeB2TEnumerator
+ * 后序遍历枚举器
+ */
+export class NodeB2TEnumerator {
+    constructor(iter) {
+        this._iter = iter; // 指向先序遍历迭代器
+        this.reset();
+    }
+    get current() {
+        if (this._arrIndex >= this._arr.length) {
+            return undefined;
+        }
+        return this._arr[this._arrIndex];
+    }
+    reset() {
+        this._arr = [];
+        while (this._iter.moveNext()) {
+            this._arr.push(this._iter.current);
+        }
+        this._arrIndex = this._arr.length;
+    }
+    moveNext() {
+        this._arrIndex--;
+        return this._arrIndex >= 0 && this._arrIndex < this._arr.length;
+    }
+}
+/**
+ * @class NodeEnumeratorFactory
+ * 使用树的遍历枚举器
+ * @function createDfL2RT2BIter 先序遍历 深搜 stack, 从左往右 IndexerR2L, 从上到下
+ * @function createDfR2LT2BIter 先序遍历 深搜 stack, 从右往左 IndexerL2R, 从上到下
+ * @function createBfL2RT2BIter 先序遍历 宽搜 Queue, 从左往右 IndexerL2R, 从上到下
+ * @function createBfR2LT2BIter 先序遍历 宽搜 Queue, 从右往左 IndexerR2L, 从上到下
+ * @function createDfL2RB2TIter 后序遍历 深搜 stack, 从左到右 从下到上
+ * @function createDfR2LB2TIter 后序遍历 深搜 stack, 从右到左 从下到上
+ * @function createBfL2RB2TIter 后序遍历 宽搜 queue, 从左到右 从下到上
+ * @function createBfR2LB2TIter 后序遍历 宽搜 queue, 从右到左 从下到上
+ */
+export class NodeEnumeratorFactory {
+    // 先序遍历 深搜 stack, 从左往右 IndexerR2L, 从上到下
+    static createDfL2RT2BIter(node) {
+        let iter = new NodeT2BEnumerator(node, IndexerR2L, Stack);
+        return iter;
+    }
+    // 先序遍历 深搜 stack, 从右往左 IndexerL2R, 从上到下
+    static createDfR2LT2BIter(node) {
+        let iter = new NodeT2BEnumerator(node, IndexerL2R, Stack);
+        return iter;
+    }
+    // 先序遍历 宽搜 Queue, 从左往右 IndexerL2R, 从上到下
+    static createBfL2RT2BIter(node) {
+        let iter = new NodeT2BEnumerator(node, IndexerL2R, Queue);
+        return iter;
+    }
+    // 先序遍历 宽搜 Queue, 从右往左 IndexerR2L, 从上到下
+    static createBfR2LT2BIter(node) {
+        let iter = new NodeT2BEnumerator(node, IndexerR2L, Queue);
+        return iter;
+    }
+    // 后序遍历 深搜 stack, 从左到右 从下到上
+    static createDfL2RB2TIter(node) {
+        let iter = new NodeB2TEnumerator(NodeEnumeratorFactory.createDfR2LT2BIter(node));
+        return iter;
+    }
+    // 后序遍历 深搜 stack, 从右到左 从下到上
+    static createDfR2LB2TIter(node) {
+        let iter = new NodeB2TEnumerator(NodeEnumeratorFactory.createDfL2RT2BIter(node));
+        return iter;
+    }
+    // 后序遍历 宽搜 queue, 从左到右 从下到上
+    static createBfL2RB2TIter(node) {
+        let iter = new NodeB2TEnumerator(NodeEnumeratorFactory.createBfR2LT2BIter(node));
+        return iter;
+    }
+    // 后序遍历 宽搜 queue, 从右到左 从下到上
+    static createBfR2LB2TIter(node) {
+        let iter = new NodeB2TEnumerator(NodeEnumeratorFactory.createBfL2RT2BIter(node));
+        return iter;
+    }
 }
 /**
  * 用例 ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓
@@ -546,3 +689,64 @@ console.log("find", dict.find("b"));
 console.log("keys", dict.keys);
 // values
 console.log("values", dict.values);
+// 测试树结构迭代器
+// let root: TreeNode<number> = new TreeNode<number>(0, undefined, "root");
+// let node1: TreeNode<number> = new TreeNode<number>(1, root, "node1");
+// let node2: TreeNode<number> = new TreeNode<number>(2, root, "node2");
+// 测试 class
+class NumberNode extends TreeNode {
+}
+export class TreeNodeTest {
+    static createTree() {
+        let root = new NumberNode(0, undefined, "root");
+        let node1 = new NumberNode(1, root, "node1");
+        let node2 = new NumberNode(2, root, "node2");
+        let node3 = new NumberNode(3, root, "node3");
+        let node4 = new NumberNode(4, node1, "node4");
+        let node5 = new NumberNode(5, node1, "node5");
+        let node6 = new NumberNode(6, node2, "node6");
+        let node7 = new NumberNode(7, node2, "node7");
+        let node8 = new NumberNode(8, node3, "node8");
+        let node9 = new NumberNode(9, node4, "node9");
+        let node10 = new NumberNode(10, node6, "node10");
+        let node11 = new NumberNode(11, node7, "node11");
+        let node12 = new NumberNode(12, node11, "node12");
+        return root;
+    }
+    static outputNodesInfo(iter) {
+        let output = [];
+        let current = undefined;
+        while (iter.moveNext()) {
+            current = iter.current;
+            if (current !== undefined) {
+                output.push(current.name);
+            }
+        }
+        return "实际输出: [" + output.join(",") + "]";
+    }
+}
+let root = TreeNodeTest.createTree();
+let iter;
+let current = undefined;
+iter = NodeEnumeratorFactory.createDfL2RT2BIter(root);
+// while (iter.moveNext()) {
+//   current = iter.current;
+//   if (current !== undefined) {
+//     console.log(current.repeatString(" ", current.depth * 4) + current.name);
+//   }
+// }
+console.log("1: 先序遍历 深搜 stack, 从左往右 从上到下", TreeNodeTest.outputNodesInfo(iter));
+iter = NodeEnumeratorFactory.createDfR2LT2BIter(root);
+console.log("2: 先序遍历 深搜 stack, 从右往左 从上到下", TreeNodeTest.outputNodesInfo(iter));
+iter = NodeEnumeratorFactory.createDfL2RB2TIter(root);
+console.log("3: 后序遍历 深搜 stack, 从左到右 从下到上", TreeNodeTest.outputNodesInfo(iter));
+iter = NodeEnumeratorFactory.createDfR2LB2TIter(root);
+console.log("4: 后序遍历 深搜 stack, 从右到左 从下到上", TreeNodeTest.outputNodesInfo(iter));
+iter = NodeEnumeratorFactory.createBfL2RT2BIter(root);
+console.log("5: 先序遍历 宽搜 Queue, 从左往右 从上到下", TreeNodeTest.outputNodesInfo(iter));
+iter = NodeEnumeratorFactory.createBfR2LT2BIter(root);
+console.log("6: 先序遍历 宽搜 Queue, 从右往左 从上到下", TreeNodeTest.outputNodesInfo(iter));
+iter = NodeEnumeratorFactory.createBfL2RB2TIter(root);
+console.log("7: 后序遍历 宽搜 queue, 从左到右 从下到上", TreeNodeTest.outputNodesInfo(iter));
+iter = NodeEnumeratorFactory.createBfR2LB2TIter(root);
+console.log("8: 后序遍历 宽搜 queue, 从右到左 从下到上", TreeNodeTest.outputNodesInfo(iter));
